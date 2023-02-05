@@ -1,7 +1,44 @@
-﻿namespace Data
-{
-    public class Class1
-    {
+﻿using Entities.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.Extensions.Configuration;
 
+namespace Data
+{
+    public class ServiceContext : DbContext 
+    {
+        public ServiceContext(DbContextOptions<ServiceContext> options) : base(options) { }
+        public DbSet<Product> Products { get; set; }
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<User> Users { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            builder.Entity<Product>()
+            .ToTable("Products");
+
+            builder.Entity<Order>()
+            .ToTable("Orders")
+            .HasOne<Product>()
+            .WithMany();
+
+            builder.Entity<User>()
+            .ToTable("Users");
+        }
+    }
+    public class ServiceContextFactory : IDesignTimeDbContextFactory<ServiceContext>
+    {
+        public ServiceContext CreateDbContext(string[] args)
+        {
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", false, true);
+            var config = builder.Build();
+            var connectionString = config.GetConnectionString("ServiceContext");
+            var optionsBuilder = new DbContextOptionsBuilder<ServiceContext>();
+            optionsBuilder.UseSqlServer(config.GetConnectionString("ServiceContext"));
+
+            return new ServiceContext(optionsBuilder.Options);
+        }
     }
 }
